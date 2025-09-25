@@ -24,8 +24,8 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace --info --refresh-dependencies
+      - name: Build Debug APK (with full logs)
+        run: gradle assembleDebug --stacktrace --info --debug --refresh-dependencies
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
