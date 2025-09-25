@@ -23,6 +23,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Debug APK
+        working-directory: .
         run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
 
       - name: Upload APK
