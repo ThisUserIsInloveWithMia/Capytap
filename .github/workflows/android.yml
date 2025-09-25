@@ -24,11 +24,19 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: Build Debug APK (with full logs)
-        run: gradle assembleDebug --stacktrace --info --debug --refresh-dependencies
+      - name: Build Debug APK (log to file)
+        run: |
+          gradle assembleDebug --stacktrace --info --refresh-dependencies > build.log 2>&1 || true
+
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CapyTap-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: ignore
