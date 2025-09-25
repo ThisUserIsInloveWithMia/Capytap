@@ -19,9 +19,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 🔹 No Gradle caching here, we keep it simple and fresh
-      - name: Verify Gradle
-        run: gradle --version
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
