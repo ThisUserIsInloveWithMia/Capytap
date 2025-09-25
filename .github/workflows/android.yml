@@ -19,18 +19,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Debug repo structure
-        run: |
-          echo "=== Current Directory ==="
-          pwd
-          echo "=== Files in root ==="
-          ls -R .
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
+        run: gradle assembleDebug --stacktrace --info --refresh-dependencies
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
