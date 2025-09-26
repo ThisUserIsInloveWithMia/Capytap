@@ -19,38 +19,35 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # --- Install Android SDK (fixed path handling) ---
+      # --- Install Android SDK (fixed unzip + rename) ---
       - name: Install Android SDK
         shell: bash
         run: |
           set -e
           ANDROID_SDK_ROOT="$HOME/android-sdk"
-          mkdir -p "$ANDROID_SDK_ROOT"
-          cd "$ANDROID_SDK_ROOT"
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          cd "$ANDROID_SDK_ROOT/cmdline-tools"
 
           # Download cmdline-tools
-          curl -sSL -o cmdline-tools.zip \
-            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          curl -sSL -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q sdk.zip
+          rm sdk.zip
 
-          # Unzip to a temp dir, then move into the 'latest' layout the tools expect
-          unzip -q cmdline-tools.zip
-          rm cmdline-tools.zip
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          mv cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
-          rmdir cmdline-tools
+          # Rename extracted folder to 'latest'
+          mv cmdline-tools latest
 
-          # Export env + PATH for subsequent steps
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          # Export env + PATH
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
-      # --- Accept licenses and install required packages (absolute path + --sdk_root) ---
+      # --- Accept licenses + install required SDK packages ---
       - name: Accept licenses and install SDK packages
         shell: bash
         run: |
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses <<< "y"
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" \
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses <<< "y"
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
             "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       - name: Make gradlew executable
