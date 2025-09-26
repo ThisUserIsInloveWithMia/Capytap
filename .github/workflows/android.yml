@@ -2,13 +2,12 @@ name: Android Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,38 +16,50 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: "17"
 
-      # First try API 34
-      - name: Install Android SDK (try 34)
-        id: sdk34
-        continue-on-error: true
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
+      # Install Android cmdline-tools + Platform 34 + Build-tools 34.0.0
+      - name: Install Android SDK (34)
+        run: |
+          set -e
+          ANDROID_ROOT="$HOME/android-sdk"
+          mkdir -p "$ANDROID_ROOT/cmdline-tools"
+          cd "$ANDROID_ROOT/cmdline-tools"
 
-      # If 34 fails, install API 33
-      - name: Install Android SDK (fallback 33)
-        if: steps.sdk34.outcome == 'failure'
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-33
-            build-tools;33.0.2
+          # Download latest commandline tools
+          curl -fsSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          mkdir -p latest
+          unzip -q cmdline-tools.zip -d latest
+          rm cmdline-tools.zip
 
-      - name: Grant execute permission for Gradlew
+          export ANDROID_SDK_ROOT="$ANDROID_ROOT"
+          export ANDROID_HOME="$ANDROID_ROOT"
+          export PATH="$ANDROID_ROOT/cmdline-tools/latest/bin:$ANDROID_ROOT/platform-tools:$ANDROID_ROOT/emulator:$PATH"
+
+          yes | sdkmanager --licenses >/dev/null
+
+          sdkmanager "platform-tools" \
+                     "platforms;android-34" \
+                     "build-tools;34.0.0"
+
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_HOME"       >> $GITHUB_ENV
+          echo "$ANDROID_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_ROOT/platform-tools"           >> $GITHUB_PATH
+
+      - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies | tee gradle-build.log
+      - name: Build Debug APK (save logs)
+        run: |
+          ./gradlew --version
+          ./gradlew clean :app:assembleDebug --stacktrace --info | tee gradle-build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-apk
-          path: app/build/outputs/apk/**/*.apk
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload Build Logs
         uses: actions/upload-artifact@v4
