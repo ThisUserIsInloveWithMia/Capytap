@@ -46,8 +46,8 @@ jobs:
       - name: Accept licenses and install SDK packages
         shell: bash
         run: |
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses <<< "y"
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
             "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       - name: Make gradlew executable
