@@ -19,12 +19,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Try SDK 34 first, if it fails → fallback to SDK 33
       - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
+        run: |
+          set -e
+          echo "👉 Trying to install SDK 34..."
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" || {
+            echo "⚠️ SDK 34 not found, falling back to SDK 33..."
+            sdkmanager "platforms;android-33" "build-tools;33.0.2"
+          }
 
       - name: Grant execute permission for Gradlew
         run: chmod +x ./gradlew
