@@ -19,11 +19,19 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Force install SDK 33
-      - name: Install Android SDK 33
+      # Install Android SDK Command-line Tools + Platform 33
+      - name: Install Android SDK
         run: |
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+          ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd $ANDROID_SDK_ROOT/cmdline-tools
+          curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip sdk.zip -d latest
+          rm sdk.zip
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+
+          yes | sdkmanager --licenses
+          yes | sdkmanager \
             "platforms;android-33" \
             "build-tools;33.0.2" \
             "platform-tools"
