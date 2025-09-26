@@ -19,72 +19,36 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Install Android cmdline-tools and SDK (try 34, fallback 33)
-      - name: Install Android SDK (API 34 -> 33 fallback)
-        shell: bash
-        run: |
-          set -e
-          ANDROID_SDK_ROOT="$HOME/android-sdk"
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-          cd "$ANDROID_SDK_ROOT/cmdline-tools"
+      # ✅ Official SDK setup action
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+            platform-tools
 
-          # Download commandline-tools
-          curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          rm cmdline-tools.zip
-
-          # Put tools under "latest" so sdkmanager path is standard
-          mv cmdline-tools latest
-
-          # Export paths for this and following steps
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
-
-          # Accept licenses
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
-
-          # Try API 34 first; if it fails, use API 33
-          if "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-34" "build-tools;34.0.0"; then
-            echo "Using Android SDK 34"
-          else
-            echo "API 34 unavailable; falling back to Android SDK 33"
-            "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-            echo "SDK_FALLBACK_33=true" >> $GITHUB_ENV
-          fi
-
-      # Use system Gradle (no wrapper jar headaches)
-      - name: Set up Gradle 8.7
+      - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 8.7
-          cache-disabled: true  # keep it simple/robust while iterating
 
-      - name: Build Debug APK (save logs)
-        shell: bash
-        run: |
-          gradle --version
-          # If we fell back to SDK 33 but your project says 34, patch target/compile on the fly (temporary safety)
-          if [ "${SDK_FALLBACK_33:-}" = "true" ]; then
-            sed -i 's/compileSdk 34/compileSdk 33/' app/build.gradle || true
-            sed -i 's/targetSdk 34/targetSdk 33/' app/build.gradle || true
-          fi
-          gradle :app:assembleDebug --stacktrace --info | tee gradle-build.log
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --info
 
       - name: List outputs
         run: ls -R app/build/outputs || true
 
-      - name: Upload APKs
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
           path: app/build/outputs/apk/**/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
-          path: gradle-build.log
+          path: app/build/*.log
