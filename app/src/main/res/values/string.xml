@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Capytap</string>
+    <string name="hello_text">Hello from Capytap 🎉</string>
 </resources>
