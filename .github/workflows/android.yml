@@ -41,10 +41,10 @@ jobs:
         run: |
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           cat > "$ANDROID_SDK_ROOT/licenses/android-sdk-license" <<EOF
-d56f5187479451eabf01fb78af6dfcb131a6481e
-24333f8a63b6825ea9c5514f83c2829b004d1fee
-e6b6e5d95f7e3d4e6d9f1f5b0a1b1b6db8b3a7c5
-8933bad161af4178b1185d1a37fbf41ea5269c55
+          d56f5187479451eabf01fb78af6dfcb131a6481e
+          24333f8a63b6825ea9c5514f83c2829b004d1fee
+          e6b6e5d95f7e3d4e6d9f1f5b0a1b1b6db8b3a7c5
+          8933bad161af4178b1185d1a37fbf41ea5269c55
 EOF
           sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
             "platforms;android-34" "build-tools;34.0.0" "platform-tools"
