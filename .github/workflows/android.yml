@@ -2,7 +2,8 @@ name: Android Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -10,61 +11,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Step 2: Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: 17
 
-      # Step 1: Download and install Android commandline-tools
+      # Step 3: Install Android SDK commandline tools
       - name: Install Android SDK
         run: |
           ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT/cmdline-tools
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip sdk.zip
+          unzip sdk.zip -d latest
           rm sdk.zip
-          if [ -d "cmdline-tools" ]; then
-            mv cmdline-tools latest
-          fi
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-
-      # Step 2: Debug path & installation
-      - name: Debug SDK install
-        run: |
-          ls -R $HOME/android-sdk/cmdline-tools
-          echo "PATH=$PATH"
-          which sdkmanager || echo "sdkmanager not found"
-
-      # Step 3: Accept licenses & install SDK packages
-      - name: Accept licenses and install SDK packages
-        run: |
-          sdkmanager --version
-          yes | sdkmanager --licenses
-          sdkmanager \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
+          echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $GITHUB_ENV
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
             "platform-tools"
 
-      # Step 4: Set up Gradle
-      - name: Set up Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: 8.7
-
-      # ✅ Step 5: Fix gradlew permissions
+      # Step 4: Make gradlew executable
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Step 6: Build Debug APK
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --info
+      # Step 5 (optional): Quick Gradle check
+      - name: Run Gradle tasks (sanity check)
+        run: ./gradlew tasks --stacktrace
 
+      # Step 6: Build Debug APK and capture logs
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --info | tee gradle-output.log
+
+      # Step 7: List outputs
+      - name: List build outputs
+        run: ls -R app/build/outputs || true
+
+      # Step 8: Upload APK artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      # Step 9: Upload Gradle build log
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-output.log
       # Step 7: List outputs
       - name: List build outputs
         run: ls -R app/build/outputs || true
