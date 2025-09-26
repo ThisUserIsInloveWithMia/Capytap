@@ -28,7 +28,6 @@ jobs:
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip sdk.zip
           rm sdk.zip
-          # Rename so sdkmanager is in the expected place
           if [ -d "cmdline-tools" ]; then
             mv cmdline-tools latest
           fi
@@ -58,14 +57,33 @@ jobs:
         with:
           gradle-version: 8.7
 
-      # Step 5: Build Debug APK
+      # ✅ Step 5: Fix gradlew permissions
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Step 6: Build Debug APK
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info
 
-      # Step 6: List outputs
+      # Step 7: List outputs
       - name: List build outputs
         run: ls -R app/build/outputs || true
 
+      # Step 8: Upload APK artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      # Step 9: Upload logs if build fails
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: app/build/*.log
       # Step 7: Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
