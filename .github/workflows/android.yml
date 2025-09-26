@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -28,17 +28,15 @@ jobs:
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip sdk.zip -d latest
           rm sdk.zip
-          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
       - name: Accept licenses and install SDK packages
         run: |
-          yes | $HOME/android-sdk/cmdline-tools/latest/cmdline-tools/bin/sdkmanager --licenses --sdk_root=$HOME/android-sdk
-          yes | $HOME/android-sdk/cmdline-tools/latest/cmdline-tools/bin/sdkmanager \
-            --sdk_root=$HOME/android-sdk \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "platform-tools"
+          sdkmanager --licenses
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -52,7 +50,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload Build Logs
@@ -60,4 +58,3 @@ jobs:
         with:
           name: gradle-build-log
           path: gradle-output.log
-        if: always()
