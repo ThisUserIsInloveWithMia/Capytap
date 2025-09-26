@@ -22,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Step 3: Install Android SDK commandline tools
+      # Step 3: Install Android SDK (KEEPING THE VERSION THAT WORKED)
       - name: Install Android SDK
         run: |
           ANDROID_SDK_ROOT=$HOME/android-sdk
@@ -31,8 +31,9 @@ jobs:
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip sdk.zip -d latest
           rm sdk.zip
-          echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
             "platforms;android-34" \
@@ -43,52 +44,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Step 5 (optional): Quick Gradle check
-      - name: Run Gradle tasks (sanity check)
-        run: ./gradlew tasks --stacktrace
-
-      # Step 6: Build Debug APK and capture logs
+      # Step 5: Build Debug APK and capture logs
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info | tee gradle-output.log
 
-      # Step 7: List outputs
+      # Step 6: List outputs
       - name: List build outputs
         run: ls -R app/build/outputs || true
 
-      # Step 8: Upload APK artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-apk
-          path: app/build/outputs/apk/**/*.apk
-          if-no-files-found: error
-
-      # Step 9: Upload Gradle build log
-      - name: Upload Build Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: gradle-output.log
-      # Step 7: List outputs
-      - name: List build outputs
-        run: ls -R app/build/outputs || true
-
-      # Step 8: Upload APK artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-apk
-          path: app/build/outputs/apk/**/*.apk
-          if-no-files-found: error
-
-      # Step 9: Upload logs if build fails
-      - name: Upload Build Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: app/build/*.log
       # Step 7: Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -97,10 +60,10 @@ jobs:
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
 
-      # Step 8: Upload logs if build fails
+      # Step 8: Upload Gradle build log
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
-          path: app/build/*.log
+          path: gradle-output.log
