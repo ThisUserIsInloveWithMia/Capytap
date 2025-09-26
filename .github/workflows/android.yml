@@ -23,25 +23,32 @@ jobs:
       - name: Ensure gradle-wrapper.jar exists
         run: |
           mkdir -p gradle/wrapper
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "gradle-wrapper.jar not found, downloading..."
-            curl -L -o gradle/wrapper/gradle-wrapper.jar https://repo1.maven.org/maven2/org/gradle/gradle-wrapper/8.7/gradle-8.7-wrapper.jar
-          fi
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://repo1.maven.org/maven2/org/gradle/gradle-wrapper/8.7/gradle-8.7-wrapper.jar
+          ls -lh gradle/wrapper/
 
       - name: Grant execute permission for Gradlew
-        run: chmod +x ./gradlew
+        run: chmod +x gradlew
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          ndk: 26.1.10909125
 
       - name: Build Debug APK (save logs)
         run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies | tee gradle-build.log
-
-      - name: Upload Build Logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: gradle-build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
