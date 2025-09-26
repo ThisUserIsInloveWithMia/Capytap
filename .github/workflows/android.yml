@@ -33,8 +33,9 @@ jobs:
 
       - name: Accept licenses and install SDK packages
         run: |
-          yes | $HOME/android-sdk/cmdline-tools/latest/cmdline-tools/bin/sdkmanager --licenses
+          yes | $HOME/android-sdk/cmdline-tools/latest/cmdline-tools/bin/sdkmanager --licenses --sdk_root=$HOME/android-sdk
           yes | $HOME/android-sdk/cmdline-tools/latest/cmdline-tools/bin/sdkmanager \
+            --sdk_root=$HOME/android-sdk \
             "platforms;android-34" \
             "build-tools;34.0.0" \
             "platform-tools"
