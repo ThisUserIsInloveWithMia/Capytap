@@ -31,11 +31,6 @@ jobs:
 
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          target: default
-          arch: x86_64
-          ndk: 26.1.10909125
 
       - name: Build Debug APK (save logs)
         run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies | tee gradle-build.log
@@ -44,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: '**/*.apk'
 
       - name: Upload Build Logs
         if: always()
