@@ -22,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Step 3: Install Android SDK (correct sdkmanager path)
+      # Step 3: Install Android SDK
       - name: Install Android SDK
         run: |
           ANDROID_SDK_ROOT=$HOME/android-sdk
@@ -34,17 +34,18 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin" >> $GITHUB_PATH
           echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin/sdkmanager --licenses
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin/sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin/sdkmanager \
             "platforms;android-34" \
             "build-tools;34.0.0" \
-            "platform-tools"
+            "platform-tools" \
+            --sdk_root=$ANDROID_SDK_ROOT
 
       # Step 4: Make gradlew executable
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Step 5: Build Debug APK and save logs
+      # Step 5: Build Debug APK
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info | tee gradle-output.log
 
@@ -52,7 +53,7 @@ jobs:
       - name: List build outputs
         run: ls -R app/build/outputs || true
 
-      # Step 7: Upload APK artifact
+      # Step 7: Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -60,7 +61,7 @@ jobs:
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
 
-      # Step 8: Upload Gradle build log
+      # Step 8: Upload Gradle logs
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
