@@ -19,17 +19,27 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+
       - name: Grant execute permission for Gradlew
         run: chmod +x ./gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
-
-      - name: List build outputs
-        run: ls -R app/build/outputs || true
+        run: ./gradlew assembleDebug --stacktrace --info --refresh-dependencies | tee gradle-build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
           path: app/build/outputs/apk/**/*.apk
+
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
