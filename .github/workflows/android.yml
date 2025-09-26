@@ -19,20 +19,30 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Step 1: Download Android commandline-tools
+      # Step 1: Download and install Android commandline-tools
       - name: Install Android SDK
         run: |
           ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT/cmdline-tools
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip sdk.zip -d latest
+          unzip sdk.zip
           rm sdk.zip
-          # Persist PATH + ANDROID_SDK_ROOT for later steps
+          # Rename so sdkmanager is in the expected place
+          if [ -d "cmdline-tools" ]; then
+            mv cmdline-tools latest
+          fi
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
-      # Step 2: Install SDK components
+      # Step 2: Debug path & installation
+      - name: Debug SDK install
+        run: |
+          ls -R $HOME/android-sdk/cmdline-tools
+          echo "PATH=$PATH"
+          which sdkmanager || echo "sdkmanager not found"
+
+      # Step 3: Accept licenses & install SDK packages
       - name: Accept licenses and install SDK packages
         run: |
           sdkmanager --version
@@ -42,17 +52,21 @@ jobs:
             "build-tools;33.0.2" \
             "platform-tools"
 
+      # Step 4: Set up Gradle
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 8.7
 
+      # Step 5: Build Debug APK
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info
 
+      # Step 6: List outputs
       - name: List build outputs
         run: ls -R app/build/outputs || true
 
+      # Step 7: Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -60,6 +74,7 @@ jobs:
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
 
+      # Step 8: Upload logs if build fails
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
